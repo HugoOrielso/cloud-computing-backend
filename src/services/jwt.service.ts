@@ -5,28 +5,24 @@ import { secretKey as configSecretKey, refreshKey as configRefreshKey } from '..
 import { User } from '../types/types'
 config()
 
-export const createToken = (user: User): string => {
+export const createToken = (user: User, maxAge: number): string => {
   const payload = {
     id: user.id,
-    name: user.name,
     email: user.email,
     iat: moment().unix(),
   }
-
   const secretKey = configSecretKey || process.env.SECRET_KEY || 'defaultSecretKey'
-  return jwt.sign(payload, secretKey, { expiresIn: '15s' }) 
+  return jwt.sign(payload, secretKey, { expiresIn: `${maxAge}s` }) 
 }
 
-export const createRefreshToken = (user: User): string => {
+export const createRefreshToken = (user: User, maxAge: number): string => {
   const payload = {
     id: user.id,
-    name: user.name,
     email: user.email,
     iat: moment().unix(),
   }
-
   const secretKey = configRefreshKey || process.env.REFRESH_KEY || 'defaultRefreshKey'
-  return jwt.sign(payload, secretKey, { expiresIn: '7d' })
+  return jwt.sign(payload, secretKey, { expiresIn: `${maxAge}d` })
 }
 
 export const verifyAccessToken = (token: string): User => {

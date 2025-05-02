@@ -7,3 +7,16 @@ export interface User extends RowDataPacket {
   password?: string
   created_at?: Date
 }
+
+export interface Payload {
+  id: string;
+  email: string;
+  iat: number;
+  exp: number
+}
+
+export interface FileData {
+  filename: string;
+  filepath: string;
+}
+

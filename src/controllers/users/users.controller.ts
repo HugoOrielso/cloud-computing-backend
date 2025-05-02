@@ -1,137 +1,88 @@
 import { Request, Response, NextFunction } from 'express'
 import { createUserDTO, LoginDto } from './usersDto'
-import { ValidationError } from '../../utils/errors'
 import { UserService } from '../../services/users.service'
 import { hash, compare } from 'bcrypt'
-import { createRefreshToken, createToken, verifyRefreshToken } from '../../services/jwt.service'
+import { createRefreshToken, createToken } from '../../services/jwt.service'
 
-export async function createUser(req: Request<{}, {}, createUserDTO>, res: Response, next: NextFunction) {
+export async function createUser(req: Request, res: Response): Promise<void> {
   try {
-    const { email, password, name } = req.body
-    const errors = []
+    const { email, password, name } = req.body as createUserDTO;
 
-    if (!email) {
-      errors.push({ field: 'email', message: 'Requerido' })
+    if (!email || !name || !password) {
+      res.status(400).json({ message: 'Faltan datos por enviar' });
+      return;
     }
 
-    if (!password) {
-      errors.push({ field: 'password', message: 'Requerido' })
-    }
-
-    if (!name) errors.push({ field: 'nombre', message: 'Requerido' })
-
-
-    if (errors.length) {
-      throw new ValidationError(errors)
-    }
-
-    const hashedPassword = await hash(password,10)
+    const hashedPassword = await hash(password, 10);
 
     const user = await UserService.createUser({
       email,
       password: hashedPassword,
-      name
-    })
-    
+      name,
+    });
 
-    res.status(201).json({
-      message: 'Usuario creado con éxito',
-      user
-    })
+    res.status(201).json({ message: 'Usuario creado con éxito', user });
   } catch (err) {
-    next(err)
+    res.status(500).json({ message: 'Error al crear el usuario' });
   }
 }
 
-
-export async function login(req: Request<{}, {}, LoginDto>, res: Response, next: NextFunction) {
+export async function login(req: Request, res: Response): Promise<void> {
   try {
-    const { email, password } = req.body
-    const errors = []
+    const { email, password } = req.body as LoginDto
 
-    if (!email) errors.push({ field: 'email', message: 'Requerido' })
-    if (!password) errors.push({ field: 'password', message: 'Requerido' })
-    if (errors.length > 0) throw new ValidationError(errors)
+    if (!email || !password) {
+      res.status(400).json({ message: 'Faltan datos por enviar' })
+      return
+    }
 
     const user = await UserService.login(email)
-    if (!user) throw new ValidationError([{ field: 'email', message: 'Email equivocado' }])
-    if (!user.password) throw new ValidationError([{ field: 'password', message: 'Contraseña no encontrada' }])
+
+    
+    if (!user || !user.password) {
+      res.status(400).json({ message: 'Usuario no encontrado' })
+      return
+    }
 
     const verifyPassword = await compare(password, user.password)
     if (!verifyPassword) {
-      throw new ValidationError([{ field: 'password', message: 'Contraseña incorrecta' }])
+      res.status(400).json({ message: 'Contraseña incorrecta' })
+      return
     }
 
-    const token = createToken(user)
-    const refreshToken = createRefreshToken(user)
+    const access_token_max_age = 15 * 60 * 1000;
+    const refresh_token_max_age = 7 * 24 * 60 * 60 * 1000;
+    
+    const token = createToken(user,access_token_max_age)
+    const refreshToken = createRefreshToken(user,refresh_token_max_age)
 
     res.cookie('access_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 15 * 60 * 1000, // 15 min
+      maxAge: access_token_max_age,
     })
 
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
+      maxAge: refresh_token_max_age,
     })
 
     res.status(200).json({
-      message: 'Login exitoso',
-      user,
+      message: 'Login exitoso'
     })
+
   } catch (err) {
-    next(err)
+    res.status(500).json({
+      message: "Ocurrió un error"
+    })
   }
 }
-
-
-export async function uploadFiles(req: Request, res: Response)   {
-
-  if (!req.files || (req.files as Express.Multer.File[]).length === 0) {
-    res.status(400).json({ message: 'No se subió ningún archivo.' });
-    return;
-  }
-
-  res.status(200).json({
-    message: 'Archivos subidos correctamente',
-    total: (req.files as Express.Multer.File[]).length,
-    files: (req.files as Express.Multer.File[]).map(file => ({
-      originalName: file.originalname,
-      path: file.path
-    }))
-  });
-}
-
 
 export const logout = (req: Request, res: Response) => {
   res.clearCookie('access_token').clearCookie('refresh_token').json({ message: 'Sesión cerrada' })
 }
 
 
-export const refreshSession = (req: Request, res: Response) => {
-  const errors = []
-  const refreshToken = req.cookies.refresh_token
-  if (!refreshToken) errors.push({ field: 'token', message: 'Requerido' })
-
-  if (errors.length > 0) throw new ValidationError(errors)
-
-  try {
-    const user = verifyRefreshToken(refreshToken)
-    const newAccessToken = createToken(user)
-
-    res.cookie('access_token', newAccessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 15 * 60 * 1000,
-    })
-
-    res.json({ message: 'Token renovado correctamente' })
-  } catch (err) {
-    res.status(403).json({ message: 'Refresh token inválido' })
-  }
-}

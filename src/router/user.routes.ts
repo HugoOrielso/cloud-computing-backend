@@ -1,16 +1,17 @@
 import { Router } from "express";
-import { createUser, login, uploadFiles, refreshSession } from "../controllers/users/users.controller";
-import upload from "../middlewares/multer/multerStorage";
-import { authMiddleware } from "../middlewares/auth/authMiddleware";
+import { createUser, login, logout  } from "../controllers/users/users.controller";
+import { authMiddleware, refreshSession } from "../middlewares/auth/authMiddleware";
 
 const userRouter = Router();
 
 userRouter.post("/create", createUser);
-userRouter.post("/", login);
-userRouter.post("/upload", authMiddleware, upload.any(), uploadFiles);
-userRouter.post("/refresh", authMiddleware,  refreshSession); 
-userRouter.post("/prueba", authMiddleware,  (req, res) => {
-    res.status(200).json({message: "ok"})
-}); 
+userRouter.post("/login", login);
+userRouter.post("/refresh",  refreshSession); 
+userRouter.get("/logout", authMiddleware, logout); 
+
+userRouter.get('/auth', authMiddleware, (req, res) => {
+    const user = (req as any).user;
+    res.json({ user });
+});
 
 export default userRouter;

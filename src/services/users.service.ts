@@ -1,7 +1,7 @@
-import { ApiError } from '../utils/apiError'
-import { User } from '../types/types.js'
+import { FileData, User } from '../types/types.js'
 import { createUserDTO } from '../controllers/users/usersDto'
 import { db } from '../lib/database/connection'
+import { v4 as uuidv4 } from 'uuid';
 
 export async function createUser(data: createUserDTO) {
     const [rows] = await db.query<User[]>(
@@ -10,7 +10,7 @@ export async function createUser(data: createUserDTO) {
     )
 
     if (rows.length > 0) {
-        throw new ApiError('Ya existe un usuario con este email', 409, 'ERR_DUPLICATE_EMAIL')
+        throw new Error('Ya existe un usuario con este email')
     }
 
     await db.query(
@@ -31,28 +31,35 @@ export async function getAllUsers(): Promise<User[]> {
 }
 
 export async function getUserById(id: string): Promise<User | null> {
-  const [rows] = await db.query<User[]>(
-    'SELECT id, name, email, created_at FROM users WHERE id = ?',
-    [id]
-  )
-  return rows[0] || null
+    const [rows] = await db.query<User[]>(
+        'SELECT id, name, email, created_at FROM users WHERE id = ?',
+        [id]
+    )
+    return rows[0] || null
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
     const [rows] = await db.query<User[]>(
-      'SELECT id, name, email, created_at FROM users WHERE id = ?',
-      [email]
+        'SELECT id, name, email, created_at FROM users WHERE id = ?',
+        [email]
     )
     return rows[0] || null
 }
 
 export async function login(email: string): Promise<User | null> {
     const [rows] = await db.query<User[]>(
-      'SELECT  password, email, created_at FROM users WHERE email = ?',
-      [email]
+        'SELECT id, email, password FROM users WHERE email = ?',
+        [email]
     )
-    return rows[0] || null
+
+    if (!rows || !Array.isArray(rows) || rows.length === 0) {
+        return null;
+    }
+
+    return rows[0] as User;
 }
+
+
 
 export const UserService = {
     createUser,

@@ -1,20 +1,26 @@
 import express from 'express'
-import { errorHandler } from './src/middlewares/errors/errorHandler'
 import userRouter from './src/router/user.routes'
-import path from 'path';
-import fs from 'fs';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import filesRouter from './src/router/files.routes';
 
 const app = express()
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
 app.use('/static', express.static(process.cwd() + '/uploads'));
-  
+
+app.use(cors({
+    origin: 'http://localhost:5173', 
+    credentials: true              
+}));
+
+app.use(cookieParser())
 const PORT = process.env.PORT ?? 4321
 
 app.use("/api/users", userRouter)
-app.use(errorHandler)
+app.use("/api/files", filesRouter)
 
-app.listen(PORT,()=>{
+app.listen(PORT, ()=>{
     console.log(`Server on port ${PORT}`);
 })
 
