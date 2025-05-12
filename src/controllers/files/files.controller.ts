@@ -114,7 +114,8 @@ export async function uploadFiles(req: Request, res: Response): Promise<void> {
       'text/html',
       'text/css',
       'application/javascript',
-      'application/x-javascript'
+      'application/x-javascript',
+      'text/javascript'
     ];
 
     const errors: string[] = [];
@@ -174,6 +175,13 @@ export async function listProjects(req: Request, res: Response) {
   }
 }
 
+export function reescribirRutasHTML(html: string, basePath: string): string {
+  return html
+    .replace(/src="\/([^"]+)"/g, `src="${basePath}/$1"`)
+    .replace(/href="\/([^"]+)"/g, `href="${basePath}/$1"`);
+}
+
+
 export async function uploadFilesFromLocal(req: Request, res: Response): Promise<void> {
   try {
     const user = req.user;
@@ -197,7 +205,8 @@ export async function uploadFilesFromLocal(req: Request, res: Response): Promise
       'text/html',
       'text/css',
       'application/javascript',
-      'application/x-javascript'
+      'application/x-javascript',
+      'text/javascript'
     ];
 
     const errors: string[] = [];
