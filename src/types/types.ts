@@ -20,3 +20,15 @@ export interface FileData {
   filepath: string;
 }
 
+export interface ProyectoMetricas {
+  projectName: string;
+  ownerEmail: string;
+  numFilesTotal: number;
+  numHtmlFiles: number;
+  numCssFiles: number;
+  numJsFiles: number;
+  totalSizeMB: number;
+  hasIndexHtml: boolean;
+  referenciasExternas: number;
+  createdAt: string;
+}

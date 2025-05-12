@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS uploads (
     id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
     folder_name VARCHAR(255) NOT NULL,
+    uploaded_from VARCHAR(255) NOT NULL,
     user_id VARCHAR(36) NOT NULL,
     project_name VARCHAR(255) NOT NULL,
     url TEXT,
