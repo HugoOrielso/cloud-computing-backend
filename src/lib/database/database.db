@@ -17,6 +17,20 @@ CREATE TABLE IF NOT EXISTS uploads (
     project_name VARCHAR(255) NOT NULL,
     url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    num_files_total INT,
+    num_html_files INT,
+    num_css_files INT,
+    num_js_files INT,
+    size_mb FLOAT,
+    has_index_html TINYINT(1),
+    referencias_externas INT,
+
+    commit_hash VARCHAR(100),
+    commit_message TEXT,
+    commit_date DATETIME,
+    commit_author VARCHAR(100),
+
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
