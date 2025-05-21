@@ -3,6 +3,7 @@ import { db } from '../lib/database/connection'
 import { v4 as uuidv4 } from 'uuid';
 import { analizarProyecto, getAbsoluteUploadPath } from '../utils/utils';
 import path from 'path';
+import fs from 'fs/promises';
 
 export async function uploadUserFiles(
     email: string,
@@ -273,8 +274,49 @@ export async function getMetricasPorUsuario(userId: string): Promise<any[]> {
 }
 
 
+export async function deleteProjectById(projectId: string): Promise<boolean> {
+  try {
+    // Paso 1: Obtener los archivos asociados
+    const [files]: any[] = await db.query(`
+      SELECT uf.file_path FROM uploaded_files uf
+      INNER JOIN uploads u ON uf.upload_id = u.id
+      WHERE u.id = ?
+    `, [projectId]);
+
+    // Paso 2: Eliminar archivos del disco
+    for (const file of files) {
+      if (file.file_path) {
+        const absolutePath = path.resolve('uploads', file.file_path);
+        try {
+          await fs.unlink(absolutePath);
+          console.log(`Archivo eliminado: ${absolutePath}`);
+        } catch (err) {
+          // return false;
+        }
+      }
+    }
+
+    await db.query(`
+      DELETE uf FROM uploaded_files uf
+      INNER JOIN uploads u ON uf.upload_id = u.id
+      WHERE u.id = ?
+    `, [projectId]);
+
+    await db.query(`DELETE FROM uploads WHERE id = ?`, [projectId]);
+
+    return true;
+
+  } catch (err) {
+    console.error('Error al eliminar el proyecto:', err);
+    return false;
+  }
+}
+
+
+
 export const FilesService = {
     uploadUserFiles,
     getUserProjects,
-    getMetricasPorUsuario
+    getMetricasPorUsuario,
+    deleteProjectById
 }

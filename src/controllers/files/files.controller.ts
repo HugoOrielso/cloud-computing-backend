@@ -1,11 +1,12 @@
 import { Request, Response } from 'express';
 import path from 'path';
 import { FileData } from '../../types/types';
-import { getMetricasPorUsuario, getProjectById, getUserProjects, uploadUserFiles, uploadUserFilesFromLocal } from '../../services/files.service';
+import { deleteProjectById, getMetricasPorUsuario, getProjectById, getUserProjects, uploadUserFiles, uploadUserFilesFromLocal } from '../../services/files.service';
 import fs from 'fs';
 import simpleGit from 'simple-git';
 import fse from 'fs-extra';
-
+import fsp from 'fs/promises'; 
+import { existsSync } from 'fs';
 export async function importarProyectoDesdeGithub(req: Request, res: Response): Promise<void> {
   try {
     const { repoUrl, folder, projectName, uploadedFrom } = req.body;
@@ -339,5 +340,30 @@ export async function lookFiles(req: Request, res: Response): Promise<void> {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error al leer el archivo' });
+  }
+}
+
+
+
+
+export async function deleteProject(req: Request, res: Response): Promise<void> {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      res.status(400).json({ message: 'Parámetros inválidos' });
+      return;
+    }
+
+    const deletedProject = await deleteProjectById(id)
+
+    if(deletedProject){
+      res.status(200).json({message: "Proyecto eliminado correctamente"})
+      return
+    }
+
+  } catch (err) {
+    console.error('Error al eliminar el archivo:', err);
+    res.status(500).json({ message: 'Error interno al eliminar el archivo' });
   }
 }
