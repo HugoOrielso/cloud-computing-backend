@@ -26,16 +26,13 @@ export async function importarProyectoDesdeGithub(req: Request, res: Response): 
     const uploadPath = path.join(__dirname, '..', '..', '..', 'uploads', folder);
     await fse.ensureDir(uploadPath);
 
-    // Paso 1: Clonar el repositorio
     const git = simpleGit();
     await git.clone(repoUrl, tempPath);
 
-    // Paso 2: Obtener el último commit desde el directorio clonado
     const gitRepo = simpleGit(tempPath);
     const log = await gitRepo.log();
     const ultimoCommit = log.latest;
 
-    // Paso 3: Copiar archivos válidos
     const allowedExtensions = ['.html', '.css', '.js'];
     const validFiles: { filename: string; filepath: string }[] = [];
 
@@ -63,7 +60,6 @@ export async function importarProyectoDesdeGithub(req: Request, res: Response): 
     buscarYCopiarArchivos(tempPath);
     await fse.remove(tempPath);
 
-    // Paso 4: Guardar todo en la base de datos
     const publicBaseUrl = `/uploads/${folder}`;
     const result = await uploadUserFiles(
       user.email,
